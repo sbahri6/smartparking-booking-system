@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Access</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9;}
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0px 0px 15px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        button { background-color: #28a745; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; margin-top: 20px;}
+        button:hover { background-color: #218838; }
+        #status { margin-top: 20px; font-weight: bold; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>My Parking Access</h2>
+    <p>Simulating User: <strong>user_123</strong></p>
+    <button id="openGateBtn">Open Gate</button>
+    <div id="status"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+    // 1. Initialize Firebase (REPLACE WITH YOUR CONFIG)
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        databaseURL: "YOUR_DATABASE_URL",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // 2. Gate Opening Logic
+    document.getElementById('openGateBtn').addEventListener('click', () => {
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerHTML = "Checking booking validation...";
+        statusDiv.className = "";
+
+        // Get the current time
+        const now = new Date();
+
+        // Retrieve the specific user's booking from Firebase
+        const userId = "user_123"; // In a real app, this comes from user login auth
+        const bookingRef = database.ref('bookings/' + userId);
+
+        bookingRef.once('value').then((snapshot) => {
+            if (snapshot.exists()) {
+                const booking = snapshot.val();
+                const entryTime = new Date(booking.entry_time);
+                const exitTime = new Date(booking.exit_time);
+
+                // Validation Check: Is the current time between entry and exit time?
+                // Note: You can add a 15-minute grace period here if desired
+                if (now >= entryTime && now <= exitTime && booking.status === "valid") {
+                    
+                    // User is valid and on time. Send command to ESP32!
+                    database.ref('gate_control').set({
+                        command: "open",
+                        last_triggered: now.toISOString()
+                    }).then(() => {
+                        statusDiv.innerHTML = "Access Granted! Gate opening...";
+                        statusDiv.className = "success";
+                    });
+
+                } else if (now < entryTime) {
+                    statusDiv.innerHTML = `Access Denied: Your booking starts at ${entryTime.toLocaleTimeString()}. You are too early.`;
+                    statusDiv.className = "error";
+                } else if (now > exitTime) {
+                    statusDiv.innerHTML = "Access Denied: Your booking has expired.";
+                    statusDiv.className = "error";
+                }
+            } else {
+                statusDiv.innerHTML = "Access Denied: No booking found for this user.";
+                statusDiv.className = "error";
+            }
+        }).catch((error) => {
+            console.error("Firebase Error:", error);
+            statusDiv.innerHTML = "Network error. Please try again.";
+            statusDiv.className = "error";
+        });
+    });
+</script>
+
+</body>
+</html>

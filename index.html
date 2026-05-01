@@ -29,7 +29,6 @@
 
 <div class="container">
     
-    <!-- LOGIN/SIGNUP SECTION -->
     <div id="auth-section">
         <h2 id="auth-title">Login</h2>
         <div class="form-group">
@@ -45,7 +44,6 @@
         <div id="auth-error" style="color: red; text-align: center; margin-top: 10px; display: none;"></div>
     </div>
 
-    <!-- USER DASHBOARD -->
     <div id="user-dashboard" class="hidden">
         <div class="header">
             <h3>Welcome, <span id="user-name-display"></span></h3>
@@ -75,11 +73,10 @@
         <button onclick="createBooking()">Confirm Booking</button>
     </div>
 
-    <!-- ADMIN DASHBOARD -->
     <div id="admin-dashboard" class="hidden">
         <div class="header"><h3>Admin Dashboard</h3><button onclick="logout()" style="width: auto;">Logout</button></div>
         <table>
-            <thead><tr><th>User</th><th>Slot</th><th>Date</th><th>Entry</th><th>Exit</th><th>Actions</th></tr></thead>
+            <thead><tr><th>User</th><th>Slot</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th></tr></thead>
             <tbody id="admin-table-body"></tbody>
         </table>
     </div>
@@ -126,6 +123,12 @@
         }
 
         if (isLoginMode) {
+            // HARDCODED ADMIN CHECK
+            if (user === 'admin' && pass === 'admin123') {
+                executeFirebaseLogin('admin', 'admin');
+                return;
+            }
+
             // LOGIN LOGIC
             db.ref('registered_users/' + user).once('value', (snap) => {
                 if (snap.exists() && snap.val().password === pass) {
@@ -166,10 +169,10 @@
         document.getElementById('auth-section').classList.add('hidden');
         if (currentUserData.role === 'admin') {
             document.getElementById('admin-dashboard').classList.remove('hidden');
-            loadAdminData();
+            loadAdminData(); // Populates the admin table
         } else {
             document.getElementById('user-dashboard').classList.remove('hidden');
-            loadUserSlots();
+            loadUserSlots(); // Populates user slots
         }
     }
 
@@ -224,6 +227,34 @@
                 const status = child.val().status || 'available';
                 grid.innerHTML += `<div class="slot ${status}">${child.key.toUpperCase()}</div>`;
             });
+        });
+    }
+
+    // NEW FUNCTION ADDED: Loads booking history for the admin panel
+    function loadAdminData() {
+        db.ref('bookings').on('value', (snap) => {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const b = child.val();
+                    const entryTime = new Date(b.entry_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const exitTime = new Date(b.exit_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${b.username}</td>
+                            <td>${b.slot.toUpperCase()}</td>
+                            <td>${b.date}</td>
+                            <td>${entryTime}</td>
+                            <td>${exitTime}</td>
+                            <td><span style="color: ${b.status === 'valid' ? '#2ecc71' : '#7f8c8d'}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No bookings found</td></tr>';
+            }
         });
     }
 

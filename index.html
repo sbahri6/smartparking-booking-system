@@ -3,93 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Parking Access</title>
+    <title>Smart Parking Booking System</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9;}
-        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0px 0px 15px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        button { background-color: #28a745; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 5px; cursor: pointer; margin-top: 20px;}
-        button:hover { background-color: #218838; }
-        #status { margin-top: 20px; font-weight: bold; }
-        .error { color: red; }
-        .success { color: green; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; }
+        
+        /* Form Styles */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; }
+        button:hover { background-color: #2980b9; }
+        button.danger { background-color: #e74c3c; }
+        button.danger:hover { background-color: #c0392b; }
+        button.edit { background-color: #f1c40f; color: black; }
+        
+        /* Layout */
+        .hidden { display: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        .action-btns { display: flex; gap: 5px; }
+        .action-btns button { width: auto; padding: 5px 10px; font-size: 14px; margin: 0; }
+
+        /* Slots */
+        .slot-grid { display: flex; gap: 10px; margin-bottom: 20px; }
+        .slot { flex: 1; padding: 20px; text-align: center; border-radius: 8px; font-weight: bold; color: white; }
+        .available { background-color: #2ecc71; }
+        .occupied { background-color: #e74c3c; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>My Parking Access</h2>
-    <p>Simulating User: <strong>user_123</strong></p>
-    <button id="openGateBtn">Open Gate</button>
-    <div id="status"></div>
+    
+    <!-- LOGIN SECTION -->
+    <div id="login-section">
+        <h2>Smart Parking Login</h2>
+        <p style="text-align: center; font-size: 14px; color: #666;">
+            Users: Enter a username, leave password blank.<br>
+            Admin: Username 'admin', Password 'admin123'.
+        </p>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter username (e.g., JohnDoe or admin)">
+        </div>
+        <div class="form-group">
+            <label>Password (Admin Only)</label>
+            <input type="password" id="password" placeholder="Leave blank for regular user">
+        </div>
+        <button onclick="handleLogin()">Login / Sign Up</button>
+        <div id="login-error" style="color: red; text-align: center; margin-top: 10px; display: none;"></div>
+    </div>
+
+    <!-- USER DASHBOARD -->
+    <div id="user-dashboard" class="hidden">
+        <div class="header">
+            <h3>User Dashboard - Welcome, <span id="user-name-display"></span></h3>
+            <button onclick="logout()" style="width: auto;">Logout</button>
+        </div>
+
+        <h4>Real-Time Slot Availability</h4>
+        <div class="slot-grid" id="slots-display">
+            <!-- Slots will populate here -->
+            <div class="slot available">Slot 1: Loading...</div>
+        </div>
+
+        <h4>Book a Parking Space</h4>
+        <div class="form-group">
+            <label>Select Slot</label>
+            <select id="book-slot">
+                <option value="slot_1">Slot 1</option>
+                <option value="slot_2">Slot 2</option>
+                <option value="slot_3">Slot 3</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="book-date">
+        </div>
+        <div class="form-group">
+            <label>Entry Time</label>
+            <input type="time" id="book-entry">
+        </div>
+        <div class="form-group">
+            <label>Exit Time</label>
+            <input type="time" id="book-exit">
+        </div>
+        <button onclick="createBooking()">Confirm Booking</button>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="admin-dashboard" class="hidden">
+        <div class="header">
+            <h3>Admin Dashboard</h3>
+            <button onclick="logout()" style="width: auto;">Logout</button>
+        </div>
+
+        <h4>All Bookings Management (CRUD)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Slot</th>
+                    <th>Date</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="admin-table-body">
+                <!-- Data populated by JS -->
+            </tbody>
+        </table>
+    </div>
+
 </div>
 
+<!-- Firebase SDKs (v8 Compatibility) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
-    // 1. Initialize Firebase (REPLACE WITH YOUR CONFIG)
+    // 1. INITIALIZE FIREBASE (REPLACE WITH YOUR CONFIG)
     const firebaseConfig = {
-  apiKey: "AIzaSyCTr-Xh32ehSrZ0yGKYEXN6_6nVMZvPF40",
-  authDomain: "smart-parking-system-5f779.firebaseapp.com",
-  databaseURL: "https://smart-parking-system-5f779-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "smart-parking-system-5f779",
-  storageBucket: "smart-parking-system-5f779.firebasestorage.app",
-  messagingSenderId: "1063980683607",
-  appId: "1:1063980683607:web:64fe282ebb7c0ceb9d2e12"
+					apiKey: "AIzaSyCTr-Xh32ehSrZ0yGKYEXN6_6nVMZvPF40",
+					authDomain: "smart-parking-system-5f779.firebaseapp.com",
+					databaseURL: "https://smart-parking-system-5f779-default-rtdb.asia-southeast1.firebasedatabase.app",
+					projectId: "smart-parking-system-5f779",
+					storageBucket: "smart-parking-system-5f779.firebasestorage.app",
+					messagingSenderId: "1063980683607",
+					appId: "1:1063980683607:web:64fe282ebb7c0ceb9d2e12"
     };
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-    // 2. Gate Opening Logic
-    document.getElementById('openGateBtn').addEventListener('click', () => {
-        const statusDiv = document.getElementById('status');
-        statusDiv.innerHTML = "Checking booking validation...";
-        statusDiv.className = "";
+    let currentUser = null;
+    let currentRole = null;
 
-        // Get the current time
-        const now = new Date();
+    // 2. AUTHENTICATION LOGIC (Custom wrapper over Anonymous Auth)
+    function handleLogin() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errorDiv = document.getElementById('login-error');
 
-        // Retrieve the specific user's booking from Firebase
-        const userId = "user_123"; // In a real app, this comes from user login auth
-        const bookingRef = database.ref('bookings/' + userId);
+        if (!username) {
+            errorDiv.innerText = "Username is required.";
+            errorDiv.style.display = "block";
+            return;
+        }
 
-        bookingRef.once('value').then((snapshot) => {
-            if (snapshot.exists()) {
-                const booking = snapshot.val();
-                const entryTime = new Date(booking.entry_time);
-                const exitTime = new Date(booking.exit_time);
-
-                // Validation Check: Is the current time between entry and exit time?
-                // Note: You can add a 15-minute grace period here if desired
-                if (now >= entryTime && now <= exitTime && booking.status === "valid") {
-                    
-                    // User is valid and on time. Send command to ESP32!
-                    database.ref('gate_control').set({
-                        command: "open",
-                        last_triggered: now.toISOString()
-                    }).then(() => {
-                        statusDiv.innerHTML = "Access Granted! Gate opening...";
-                        statusDiv.className = "success";
-                    });
-
-                } else if (now < entryTime) {
-                    statusDiv.innerHTML = `Access Denied: Your booking starts at ${entryTime.toLocaleTimeString()}. You are too early.`;
-                    statusDiv.className = "error";
-                } else if (now > exitTime) {
-                    statusDiv.innerHTML = "Access Denied: Your booking has expired.";
-                    statusDiv.className = "error";
-                }
-            } else {
-                statusDiv.innerHTML = "Access Denied: No booking found for this user.";
-                statusDiv.className = "error";
+        // Admin Check
+        if (username === 'admin') {
+            if (password !== 'admin123') {
+                errorDiv.innerText = "Incorrect admin password.";
+                errorDiv.style.display = "block";
+                return;
             }
-        }).catch((error) => {
-            console.error("Firebase Error:", error);
-            statusDiv.innerHTML = "Network error. Please try again.";
-            statusDiv.className = "error";
-        });
-    });
-</script>
+            currentRole = 'admin';
+        } else {
+            currentRole = 'user';
+        }
 
+        // Execute Firebase Anonymous Login
+        auth.signInAnonymously()
+            .then((userCredential) => {
+                currentUser = userCredential.user;
+                // Save user metadata to database
+                db.ref('users/' + currentUser.uid).set({
+                    username: username,
+                    role: currentRole
+                });
+                
+                document.getElementById('user-name-display').innerText = username;
+                showDashboard();
+            })
+            .catch((error) => {
+                errorDiv.innerText = "Auth Error: " + error.message;
+                errorDiv.style.display = "block";
+            });
+    }
+
+    function logout() {
+        auth.signOut().then(() => {
+            currentUser = null;
+            currentRole = null;
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('user-dashboard').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.add('hidden');
+        });
+    }
+
+    function showDashboard() {
+        document.getElementById('login-section').classList.add('hidden');
+        if (currentRole === 'admin') {
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            loadAdminData();
+        } else {
+            document.getElementById('user-dashboard').classList.remove('hidden');
+            loadUserSlots();
+        }
+    }
+
+    // 3. USER FUNCTIONS
+    function loadUserSlots() {
+        // Listen to live parking slot data
+        db.ref('parking_slots').on('value', (snapshot) => {
+            const slotsGrid = document.getElementById('slots-display');
+            slotsGrid.innerHTML = ''; // Clear
+            
+            if(snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    const slotName = childSnapshot.key;
+                    const status = childSnapshot.val().status || 'available';
+                    const cssClass = status === 'available' ? 'available' : 'occupied';
+                    
+                    slotsGrid.innerHTML += `<div class="slot ${cssClass}">${slotName.replace('_', ' ').toUpperCase()}<br><small>${status}</small></div>`;
+                });
+            } else {
+                slotsGrid.innerHTML = '<p>No slot data available. Please set up ESP32.</p>';
+            }
+        });
+    }
+
+    function createBooking() {
+        const slot = document.getElementById('book-slot').value;
+        const date = document.getElementById('book-date').value;
+        const entry = document.getElementById('book-entry').value;
+        const exit = document.getElementById('book-exit').value;
+
+        if (!date || !entry || !exit) {
+            alert("Please fill in all booking fields.");
+            return;
+        }
+
+        // Format datetime strings to match the ESP32 validation logic
+        const entryTimeStr = `${date}T${entry}:00`;
+        const exitTimeStr = `${date}T${exit}:00`;
+
+        const bookingRef = db.ref('bookings').push(); // Generate unique ID
+        
+        bookingRef.set({
+            user_id: currentUser.uid,
+            username: document.getElementById('user-name-display').innerText,
+            slot: slot,
+            date: date,
+            entry_time: entryTimeStr,
+            exit_time: exitTimeStr,
+            status: "valid"
+        }).then(() => {
+            alert("Booking successful!");
+        }).catch(err => alert("Error: " + err.message));
+    }
+
+    // 4. ADMIN CRUD FUNCTIONS
+    function loadAdminData() {
+        db.ref('bookings').on('value', (snapshot) => {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+            
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    const id = child.key;
+                    const data = child.val();
+                    
+                    // Extract just the time part for clean display
+                    const entryT = data.entry_time.split('T')[1].substring(0,5);
+                    const exitT = data.exit_time.split('T')[1].substring(0,5);
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${data.username}</td>
+                            <td>${data.slot}</td>
+                            <td>${data.date}</td>
+                            <td>${entryT}</td>
+                            <td>${exitT}</td>
+                            <td>${data.status}</td>
+                            <td class="action-btns">
+                                <button class="edit" onclick="editBooking('${id}', '${data.date}')">Edit</button>
+                                <button class="danger" onclick="deleteBooking('${id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No bookings found.</td></tr>';
+            }
+        });
+    }
+
+    // Update (Edit)
+    function editBooking(id, currentDate) {
+        // Simple prompt-based edit for demonstration
+        const newEntry = prompt("Enter new Entry Time (HH:MM):", "14:00");
+        const newExit = prompt("Enter new Exit Time (HH:MM):", "16:00");
+        
+        if (newEntry && newExit) {
+            db.ref('bookings/' + id).update({
+                entry_time: `${currentDate}T${newEntry}:00`,
+                exit_time: `${currentDate}T${newExit}:00`
+            }).then(() => alert("Booking updated!"))
+              .catch(err => alert("Update failed: " + err.message));
+        }
+    }
+
+    // Delete
+    function deleteBooking(id) {
+        if (confirm("Are you sure you want to delete this booking?")) {
+            db.ref('bookings/' + id).remove()
+              .then(() => alert("Booking deleted."))
+              .catch(err => alert("Delete failed: " + err.message));
+        }
+    }
+
+</script>
 </body>
 </html>

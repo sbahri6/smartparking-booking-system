@@ -6,29 +6,47 @@
     <title>Smart Parking Booking System</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2, h3, h4 { color: #2c3e50; }
+        h2 { text-align: center; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { background-color: #3498db; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; transition: background 0.3s; }
         button:hover { background-color: #2980b9; }
         button.secondary { background-color: #95a5a6; }
         button.success { background-color: #2ecc71; margin-top: 20px; font-weight: bold; }
+        button.danger { background-color: #e74c3c; width: auto; padding: 5px 10px; font-size: 14px; margin: 0; }
+        button.warning { background-color: #f39c12; width: auto; }
         .hidden { display: none; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
-        .slot-grid { display: flex; gap: 10px; margin-bottom: 20px; }
-        .slot { flex: 1; padding: 20px; text-align: center; border-radius: 8px; font-weight: bold; color: white; }
+        
+        /* Slot Grid Styling */
+        .slot-grid { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .slot { flex: 1; min-width: 80px; padding: 20px; text-align: center; border-radius: 8px; font-weight: bold; color: white; }
         .available { background-color: #2ecc71; }
         .occupied { background-color: #e74c3c; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; }
+        
+        /* Admin Dashboard Stats */
+        .stats-grid { display: flex; gap: 15px; margin-bottom: 20px; }
+        .stat-card { flex: 1; background: #ecf0f1; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card h3 { margin: 0 0 10px 0; font-size: 24px; color: #2980b9; }
+        .stat-card p { margin: 0; font-weight: bold; color: #7f8c8d; }
+        
+        .admin-controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        
+        .info-box { background-color: #e8f4f8; padding: 15px; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 20px; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     
+    <!-- AUTHENTICATION SECTION -->
     <div id="auth-section">
         <h2 id="auth-title">Login</h2>
         <div class="form-group">
@@ -44,39 +62,72 @@
         <div id="auth-error" style="color: red; text-align: center; margin-top: 10px; display: none;"></div>
     </div>
 
+    <!-- USER DASHBOARD -->
     <div id="user-dashboard" class="hidden">
         <div class="header">
             <h3>Welcome, <span id="user-name-display"></span></h3>
-            <button onclick="logout()" style="width: auto;">Logout</button>
+            <button onclick="logout()" style="width: auto;" class="secondary">Logout</button>
         </div>
 
         <h4>Gate Access</h4>
         <button class="success" onclick="tryOpenGate()">CHECK-IN & OPEN GATE</button>
-        <p style="font-size: 12px; color: #666;">Gate only opens if you have a booking for right now.</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Gate only opens if you have a valid booking for the current time.</p>
 
         <hr>
-        <h4>Real-Time Slot Availability</h4>
-        <div class="slot-grid" id="slots-display"></div>
-
+        
         <h4>Book a Parking Space</h4>
-        <div class="form-group">
-            <label>Select Slot</label>
-            <select id="book-slot">
-                <option value="slot_1">Slot 1</option>
-                <option value="slot_2">Slot 2</option>
-                <option value="slot_3">Slot 3</option>
-            </select>
+        <div class="info-box">
+            Bookings guarantee you entry to the facility during your scheduled time. You may park in any slot shown as <strong>GREEN (Available)</strong> on the real-time board below when you arrive.
         </div>
+        
+        <!-- Slot selection removed. Booking is now purely time/date based -->
         <div class="form-group"><label>Date</label><input type="date" id="book-date"></div>
         <div class="form-group"><label>Entry Time</label><input type="time" id="book-entry"></div>
         <div class="form-group"><label>Exit Time</label><input type="time" id="book-exit"></div>
         <button onclick="createBooking()">Confirm Booking</button>
+
+        <hr>
+
+        <h4>Real-Time Slot Availability</h4>
+        <p style="font-size: 13px; color: #555;">Check which spaces are currently open before you arrive.</p>
+        <div class="slot-grid" id="slots-display"></div>
+
+        <hr>
+
+        <h4>My Bookings</h4>
+        <table>
+            <thead><tr><th>Space</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="user-table-body"></tbody>
+        </table>
     </div>
 
+    <!-- ADMIN DASHBOARD -->
     <div id="admin-dashboard" class="hidden">
-        <div class="header"><h3>Admin Dashboard</h3><button onclick="logout()" style="width: auto;">Logout</button></div>
+        <div class="header">
+            <h3>Admin Dashboard</h3>
+            <button onclick="logout()" style="width: auto;" class="secondary">Logout</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="stat-total-bookings">0</h3>
+                <p>Total Bookings</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="stat-active-users">0</h3>
+                <p>Registered Users</p>
+            </div>
+        </div>
+
+        <h4>Manual Gate Control</h4>
+        <div class="admin-controls">
+            <button class="success" style="margin-top: 0;" onclick="adminForceGate('open')">FORCE OPEN GATE</button>
+            <button class="danger" onclick="adminForceGate('close')">FORCE CLOSE GATE</button>
+        </div>
+
+        <h4>All System Bookings</h4>
         <table>
-            <thead><tr><th>User</th><th>Slot</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th></tr></thead>
+            <thead><tr><th>User</th><th>Space</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="admin-table-body"></tbody>
         </table>
     </div>
@@ -87,6 +138,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
+    // Initialize Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCTr-Xh32ehSrZ0yGKYEXN6_6nVMZvPF40",
         authDomain: "smart-parking-system-5f779.firebaseapp.com",
@@ -123,13 +175,11 @@
         }
 
         if (isLoginMode) {
-            // HARDCODED ADMIN CHECK
             if (user === 'admin' && pass === 'admin123') {
                 executeFirebaseLogin('admin', 'admin');
                 return;
             }
 
-            // LOGIN LOGIC
             db.ref('registered_users/' + user).once('value', (snap) => {
                 if (snap.exists() && snap.val().password === pass) {
                     executeFirebaseLogin(user, snap.val().role);
@@ -139,7 +189,6 @@
                 }
             });
         } else {
-            // SIGN UP LOGIC
             db.ref('registered_users/' + user).once('value', (snap) => {
                 if (snap.exists()) {
                     errorDiv.innerText = "Username already taken.";
@@ -169,24 +218,28 @@
         document.getElementById('auth-section').classList.add('hidden');
         if (currentUserData.role === 'admin') {
             document.getElementById('admin-dashboard').classList.remove('hidden');
-            loadAdminData(); // Populates the admin table
+            loadAdminData();
+            loadAdminStats();
         } else {
             document.getElementById('user-dashboard').classList.remove('hidden');
-            loadUserSlots(); // Populates user slots
+            loadUserSlots(); // Real-time grid still loads
+            loadUserBookings();
         }
     }
 
-    // GATE LOGIC: Only open if User has a valid booking NOW
+    // --- USER FUNCTIONS ---
+
     function tryOpenGate() {
         const now = new Date();
         db.ref('bookings').orderByChild('username').equalTo(currentUserData.username).once('value', (snap) => {
             let canEnter = false;
             snap.forEach(child => {
                 const b = child.val();
+                if(b.status !== 'valid') return; 
+                
                 const entry = new Date(b.entry_time);
                 const exit = new Date(b.exit_time);
                 
-                // Check if current time is between entry and exit
                 if (now >= entry && now <= exit) {
                     canEnter = true;
                 }
@@ -202,27 +255,39 @@
     }
 
     function createBooking() {
-        const slot = document.getElementById('book-slot').value;
         const date = document.getElementById('book-date').value;
         const entry = document.getElementById('book-entry').value;
         const exit = document.getElementById('book-exit').value;
 
-        if (!date || !entry || !exit) return alert("Fill all fields");
+        if (!date || !entry || !exit) return alert("Please fill all fields");
+        if (exit <= entry) return alert("Exit time must be after entry time.");
 
+        // Instead of a specific slot, we log it as "General Admission"
         db.ref('bookings').push({
             username: currentUserData.username,
-            slot: slot,
+            slot: "General Space", 
             date: date,
             entry_time: `${date}T${entry}:00`,
             exit_time: `${date}T${exit}:00`,
             status: "valid"
-        }).then(() => alert("Booked!"));
+        }).then(() => {
+            alert("Parking successfully booked!");
+            document.getElementById('book-date').value = '';
+            document.getElementById('book-entry').value = '';
+            document.getElementById('book-exit').value = '';
+        });
     }
 
+    // This remains to show the real-time sensor data
     function loadUserSlots() {
         db.ref('parking_slots').on('value', (snap) => {
             const grid = document.getElementById('slots-display');
             grid.innerHTML = '';
+            
+            if (!snap.exists()) {
+                grid.innerHTML = '<p>No slot data available yet.</p>';
+                return;
+            }
             snap.forEach(child => {
                 const status = child.val().status || 'available';
                 grid.innerHTML += `<div class="slot ${status}">${child.key.toUpperCase()}</div>`;
@@ -230,17 +295,59 @@
         });
     }
 
-    // NEW FUNCTION ADDED: Loads booking history for the admin panel
-    function loadAdminData() {
-        db.ref('bookings').on('value', (snap) => {
-            const tbody = document.getElementById('admin-table-body');
+    function loadUserBookings() {
+        db.ref('bookings').orderByChild('username').equalTo(currentUserData.username).on('value', (snap) => {
+            const tbody = document.getElementById('user-table-body');
             tbody.innerHTML = '';
             if (snap.exists()) {
                 snap.forEach(child => {
+                    const id = child.key;
                     const b = child.val();
                     const entryTime = new Date(b.entry_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     const exitTime = new Date(b.exit_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
+                    const statusColor = b.status === 'valid' ? '#2ecc71' : '#e74c3c';
+                    const actionBtn = b.status === 'valid' ? `<button class="danger" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button>` : '-';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${b.slot.toUpperCase()}</td>
+                            <td>${b.date}</td>
+                            <td>${entryTime}</td>
+                            <td>${exitTime}</td>
+                            <td><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                            <td>${actionBtn}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">You have no bookings yet</td></tr>';
+            }
+        });
+    }
+
+    // --- ADMIN FUNCTIONS ---
+
+    function loadAdminData() {
+        db.ref('bookings').on('value', (snap) => {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+            
+            let totalBookings = 0;
+
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    totalBookings++;
+                    const id = child.key;
+                    const b = child.val();
+                    const entryTime = new Date(b.entry_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const exitTime = new Date(b.exit_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    const statusColor = b.status === 'valid' ? '#2ecc71' : '#e74c3c';
+                    const actionBtn = b.status === 'valid' ? 
+                        `<button class="danger" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button>` : 
+                        `<button class="secondary" style="width:auto; padding: 5px 10px; font-size:14px;" onclick="deleteBooking('${id}')">Delete</button>`;
+
                     tbody.innerHTML += `
                         <tr>
                             <td>${b.username}</td>
@@ -248,14 +355,45 @@
                             <td>${b.date}</td>
                             <td>${entryTime}</td>
                             <td>${exitTime}</td>
-                            <td><span style="color: ${b.status === 'valid' ? '#2ecc71' : '#7f8c8d'}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                            <td><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                            <td>${actionBtn}</td>
                         </tr>
                     `;
                 });
+                document.getElementById('stat-total-bookings').innerText = totalBookings;
             } else {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No bookings found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No bookings found</td></tr>';
+                document.getElementById('stat-total-bookings').innerText = 0;
             }
         });
+    }
+
+    function loadAdminStats() {
+        db.ref('registered_users').on('value', (snap) => {
+            if (snap.exists()) {
+                document.getElementById('stat-active-users').innerText = snap.numChildren();
+            }
+        });
+    }
+
+    function adminForceGate(command) {
+        db.ref('gate_control/command').set(command).then(() => {
+            alert(`Gate has been forced to: ${command.toUpperCase()}`);
+        });
+    }
+
+    // --- SHARED UTILITY FUNCTIONS ---
+
+    function updateBookingStatus(bookingId, newStatus) {
+        if(confirm(`Are you sure you want to mark this booking as ${newStatus}?`)) {
+            db.ref('bookings/' + bookingId).update({ status: newStatus });
+        }
+    }
+
+    function deleteBooking(bookingId) {
+        if(confirm("Are you sure you want to permanently delete this record?")) {
+            db.ref('bookings/' + bookingId).remove();
+        }
     }
 
     function logout() { location.reload(); }

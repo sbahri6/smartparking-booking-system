@@ -18,7 +18,7 @@
         button.success { background-color: #2ecc71; margin-top: 20px; font-weight: bold; }
         button.danger { background-color: #e74c3c; width: auto; padding: 5px 10px; font-size: 14px; margin: 0; }
         button.warning { background-color: #f39c12; width: auto; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
         
         /* Slot Grid Styling */
@@ -70,8 +70,8 @@
         </div>
 
         <h4>Gate Access</h4>
-        <button class="success" onclick="tryOpenGate()">CHECK-IN & OPEN GATE</button>
-        <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Gate only opens if you have a valid booking for the current time.</p>
+        <button id="gate-btn" class="success hidden" onclick="tryOpenGate()">CHECK-IN & OPEN GATE</button>
+        <p id="gate-msg" style="font-size: 13px; color: #e74c3c; font-weight: bold;">The gate access button will appear here when it is time for your active booking.</p>
 
         <hr>
         
@@ -80,7 +80,6 @@
             Bookings guarantee you entry to the facility during your scheduled time. You may park in any slot shown as <strong>GREEN (Available)</strong> on the real-time board below when you arrive.
         </div>
         
-        <!-- Slot selection removed. Booking is now purely time/date based -->
         <div class="form-group"><label>Date</label><input type="date" id="book-date"></div>
         <div class="form-group"><label>Entry Time</label><input type="time" id="book-entry"></div>
         <div class="form-group"><label>Exit Time</label><input type="time" id="book-exit"></div>
@@ -94,7 +93,7 @@
 
         <hr>
 
-        <h4>My Bookings</h4>
+        <h4>My Upcoming Bookings</h4>
         <table>
             <thead><tr><th>Space</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="user-table-body"></tbody>
@@ -125,10 +124,25 @@
             <button class="danger" onclick="adminForceGate('close')">FORCE CLOSE GATE</button>
         </div>
 
+        <hr>
+
+        <h4>Real-Time Slot Availability (Admin View)</h4>
+        <div class="slot-grid" id="admin-slots-display"></div>
+
+        <hr>
+
         <h4>All System Bookings</h4>
         <table>
             <thead><tr><th>User</th><th>Space</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="admin-table-body"></tbody>
+        </table>
+
+        <hr>
+
+        <h4>Registered Users</h4>
+        <table>
+            <thead><tr><th>Username</th><th>Role</th></tr></thead>
+            <tbody id="admin-users-table-body"></tbody>
         </table>
     </div>
 </div>
@@ -154,6 +168,26 @@
 
     let isLoginMode = true;
     let currentUserData = null;
+    let userBookingsData = []; // Cache to monitor gate time
+
+    // Setup on page load (Persistent Login & Enter Key)
+    window.addEventListener('DOMContentLoaded', () => {
+        // Handle "Enter" key for login
+        document.getElementById('password').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') handleAuth();
+        });
+
+        // Check for persistent session
+        const savedSession = localStorage.getItem('sps_user_session');
+        if (savedSession) {
+            currentUserData = JSON.parse(savedSession);
+            document.getElementById('user-name-display').innerText = currentUserData.username;
+            showDashboard();
+        }
+        
+        // Start background clock to update status & gate button
+        setInterval(evaluateTimeBasedActions, 1000); 
+    });
 
     function toggleAuthMode() {
         isLoginMode = !isLoginMode;
@@ -209,6 +243,7 @@
     function executeFirebaseLogin(username, role) {
         auth.signInAnonymously().then((cred) => {
             currentUserData = { uid: cred.user.uid, username: username, role: role };
+            localStorage.setItem('sps_user_session', JSON.stringify(currentUserData)); // Save session
             document.getElementById('user-name-display').innerText = username;
             showDashboard();
         });
@@ -216,42 +251,62 @@
 
     function showDashboard() {
         document.getElementById('auth-section').classList.add('hidden');
+        loadRealtimeSlots(); // Loads for both user and admin
+
         if (currentUserData.role === 'admin') {
             document.getElementById('admin-dashboard').classList.remove('hidden');
             loadAdminData();
-            loadAdminStats();
+            loadAdminUsers();
         } else {
             document.getElementById('user-dashboard').classList.remove('hidden');
-            loadUserSlots(); // Real-time grid still loads
             loadUserBookings();
+        }
+    }
+
+    // Runs every second to check if bookings have expired or if gate needs to be shown
+    function evaluateTimeBasedActions() {
+        if (!currentUserData) return;
+        const now = new Date();
+
+        // Expire logic across all loaded bookings (for UI cleanup & DB updates)
+        userBookingsData.forEach(b => {
+            const exitTime = new Date(b.exit_time);
+            if (b.status === 'valid' && now > exitTime) {
+                b.status = 'expired';
+                db.ref('bookings/' + b.id).update({ status: 'expired' });
+                if (currentUserData.role !== 'admin') loadUserBookings(); // Re-render to hide
+            }
+        });
+
+        // Toggle Gate button visibility for users
+        if (currentUserData.role !== 'admin') {
+            let canEnterNow = false;
+            userBookingsData.forEach(b => {
+                const entryTime = new Date(b.entry_time);
+                const exitTime = new Date(b.exit_time);
+                if (b.status === 'valid' && now >= entryTime && now <= exitTime) {
+                    canEnterNow = true;
+                }
+            });
+
+            const gateBtn = document.getElementById('gate-btn');
+            const gateMsg = document.getElementById('gate-msg');
+
+            if (canEnterNow) {
+                gateBtn.classList.remove('hidden');
+                gateMsg.classList.add('hidden');
+            } else {
+                gateBtn.classList.add('hidden');
+                gateMsg.classList.remove('hidden');
+            }
         }
     }
 
     // --- USER FUNCTIONS ---
 
     function tryOpenGate() {
-        const now = new Date();
-        db.ref('bookings').orderByChild('username').equalTo(currentUserData.username).once('value', (snap) => {
-            let canEnter = false;
-            snap.forEach(child => {
-                const b = child.val();
-                if(b.status !== 'valid') return; 
-                
-                const entry = new Date(b.entry_time);
-                const exit = new Date(b.exit_time);
-                
-                if (now >= entry && now <= exit) {
-                    canEnter = true;
-                }
-            });
-
-            if (canEnter) {
-                db.ref('gate_control/command').set('open');
-                alert("Access Granted! Opening gate...");
-            } else {
-                alert("Access Denied: No active booking found for this time.");
-            }
-        });
+        db.ref('gate_control/command').set('open');
+        alert("Access Granted! Opening gate...");
     }
 
     function createBooking() {
@@ -262,7 +317,6 @@
         if (!date || !entry || !exit) return alert("Please fill all fields");
         if (exit <= entry) return alert("Exit time must be after entry time.");
 
-        // Instead of a specific slot, we log it as "General Admission"
         db.ref('bookings').push({
             username: currentUserData.username,
             slot: "General Space", 
@@ -278,33 +332,31 @@
         });
     }
 
-    // This remains to show the real-time sensor data
-    function loadUserSlots() {
-        db.ref('parking_slots').on('value', (snap) => {
-            const grid = document.getElementById('slots-display');
-            grid.innerHTML = '';
-            
-            if (!snap.exists()) {
-                grid.innerHTML = '<p>No slot data available yet.</p>';
-                return;
-            }
-            snap.forEach(child => {
-                const status = child.val().status || 'available';
-                grid.innerHTML += `<div class="slot ${status}">${child.key.toUpperCase()}</div>`;
-            });
-        });
-    }
-
     function loadUserBookings() {
         db.ref('bookings').orderByChild('username').equalTo(currentUserData.username).on('value', (snap) => {
             const tbody = document.getElementById('user-table-body');
             tbody.innerHTML = '';
+            userBookingsData = []; // Update cache
+            let hasVisibleBookings = false;
+            const now = new Date();
+
             if (snap.exists()) {
                 snap.forEach(child => {
                     const id = child.key;
                     const b = child.val();
+                    b.id = id;
+                    userBookingsData.push(b);
+
+                    const exitTimeDate = new Date(b.exit_time);
+
+                    // Skip displaying past/expired bookings
+                    if (now > exitTimeDate || b.status === 'expired') {
+                        return;
+                    }
+
+                    hasVisibleBookings = true;
                     const entryTime = new Date(b.entry_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    const exitTime = new Date(b.exit_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const exitTime = exitTimeDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
                     const statusColor = b.status === 'valid' ? '#2ecc71' : '#e74c3c';
                     const actionBtn = b.status === 'valid' ? `<button class="danger" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button>` : '-';
@@ -320,9 +372,38 @@
                         </tr>
                     `;
                 });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">You have no bookings yet</td></tr>';
             }
+            
+            if(!hasVisibleBookings) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">You have no upcoming or active bookings</td></tr>';
+            }
+            
+            evaluateTimeBasedActions(); // Check gate immediately on load
+        });
+    }
+
+    // Function reused for both User and Admin Dashboards
+    function loadRealtimeSlots() {
+        db.ref('parking_slots').on('value', (snap) => {
+            const userGrid = document.getElementById('slots-display');
+            const adminGrid = document.getElementById('admin-slots-display');
+            
+            if(userGrid) userGrid.innerHTML = '';
+            if(adminGrid) adminGrid.innerHTML = '';
+            
+            if (!snap.exists()) {
+                const noData = '<p>No slot data available yet.</p>';
+                if(userGrid) userGrid.innerHTML = noData;
+                if(adminGrid) adminGrid.innerHTML = noData;
+                return;
+            }
+            
+            snap.forEach(child => {
+                const status = child.val().status || 'available';
+                const html = `<div class="slot ${status}">${child.key.toUpperCase()}</div>`;
+                if(userGrid) userGrid.innerHTML += html;
+                if(adminGrid) adminGrid.innerHTML += html;
+            });
         });
     }
 
@@ -332,7 +413,7 @@
         db.ref('bookings').on('value', (snap) => {
             const tbody = document.getElementById('admin-table-body');
             tbody.innerHTML = '';
-            
+            userBookingsData = []; // Update cache for admin expiry check
             let totalBookings = 0;
 
             if (snap.exists()) {
@@ -340,13 +421,21 @@
                     totalBookings++;
                     const id = child.key;
                     const b = child.val();
+                    b.id = id;
+                    userBookingsData.push(b);
+
                     const entryTime = new Date(b.entry_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     const exitTime = new Date(b.exit_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
-                    const statusColor = b.status === 'valid' ? '#2ecc71' : '#e74c3c';
+                    let statusColor = '#3498db'; // Default
+                    if (b.status === 'valid') statusColor = '#2ecc71';
+                    if (b.status === 'cancelled') statusColor = '#e74c3c';
+                    if (b.status === 'expired') statusColor = '#95a5a6';
+
                     const actionBtn = b.status === 'valid' ? 
-                        `<button class="danger" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button>` : 
-                        `<button class="secondary" style="width:auto; padding: 5px 10px; font-size:14px;" onclick="deleteBooking('${id}')">Delete</button>`;
+                        `<button class="warning" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button> ` : '';
+                        
+                    const deleteBtn = `<button class="danger" style="margin-left: 5px;" onclick="deleteBooking('${id}')">Delete</button>`;
 
                     tbody.innerHTML += `
                         <tr>
@@ -356,7 +445,7 @@
                             <td>${entryTime}</td>
                             <td>${exitTime}</td>
                             <td><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
-                            <td>${actionBtn}</td>
+                            <td>${actionBtn}${deleteBtn}</td>
                         </tr>
                     `;
                 });
@@ -365,13 +454,31 @@
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No bookings found</td></tr>';
                 document.getElementById('stat-total-bookings').innerText = 0;
             }
+            
+            evaluateTimeBasedActions(); // Trigger expiry checks
         });
     }
 
-    function loadAdminStats() {
+    function loadAdminUsers() {
         db.ref('registered_users').on('value', (snap) => {
+            const tbody = document.getElementById('admin-users-table-body');
+            tbody.innerHTML = '';
+            
             if (snap.exists()) {
                 document.getElementById('stat-active-users').innerText = snap.numChildren();
+                snap.forEach(child => {
+                    const username = child.key;
+                    const role = child.val().role;
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${username}</strong></td>
+                            <td>${role.toUpperCase()}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                document.getElementById('stat-active-users').innerText = 0;
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No users registered</td></tr>';
             }
         });
     }
@@ -396,7 +503,10 @@
         }
     }
 
-    function logout() { location.reload(); }
+    function logout() { 
+        localStorage.removeItem('sps_user_session'); // Clear session
+        location.reload(); 
+    }
 </script>
 </body>
 </html>

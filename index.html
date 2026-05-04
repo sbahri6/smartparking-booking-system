@@ -121,30 +121,6 @@
         .available { background-color: #2ecc71; }
         .occupied  { background-color: #e74c3c; }
 
-        /* ── Tables (desktop) ── */
-        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 15px; margin-bottom: 30px; border-radius: 8px; border: 1px solid #ddd; }
-        table { width: 100%; border-collapse: collapse; min-width: 480px; }
-        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #ddd; white-space: nowrap; }
-        th { background-color: #f8f9fa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
-        tr:last-child td { border-bottom: none; }
-
-        /* ── Stats Grid ── */
-        .stats-grid { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
-        .stat-card {
-            flex: 1;
-            min-width: 120px;
-            background: #ecf0f1;
-            padding: 18px 12px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat-card h3 { margin: 0 0 6px 0; font-size: clamp(1.4rem, 6vw, 1.8rem); color: #2980b9; }
-        .stat-card p  { margin: 0; font-weight: bold; color: #7f8c8d; font-size: 13px; }
-
-        /* ── Admin Gate Controls ── */
-        .admin-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .admin-controls button { flex: 1; min-width: 140px; margin-top: 0; }
-
         /* ── Info box ── */
         .info-box {
             background-color: #e8f4f8;
@@ -159,83 +135,170 @@
         /* ── Gate message ── */
         #gate-msg { font-size: 13px; color: #e74c3c; font-weight: bold; margin: 6px 0 0; line-height: 1.5; }
 
-        /* ── Booking form: entry/exit side by side on tablet+ ── */
+        /* ── Booking form: entry/exit side by side on wider screens ── */
         .time-row { display: flex; gap: 12px; }
         .time-row .form-group { flex: 1; }
 
-        /* ══════════════════════════════════════════════
-           TABLET  (≤ 700px)
-        ══════════════════════════════════════════════ */
-        @media (max-width: 700px) {
-            body { padding: 10px; }
-
-            .container { padding: 20px 16px; border-radius: 10px; }
-
-            /* Stack time inputs on narrow phones */
-            .time-row { flex-direction: column; gap: 0; }
+        /* ── Stats Grid ── */
+        .stats-grid { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat-card {
+            flex: 1; min-width: 120px;
+            background: #ecf0f1;
+            padding: 18px 12px;
+            border-radius: 8px;
+            text-align: center;
         }
+        .stat-card h3 { margin: 0 0 6px 0; font-size: clamp(1.4rem, 6vw, 1.8rem); color: #2980b9; }
+        .stat-card p  { margin: 0; font-weight: bold; color: #7f8c8d; font-size: 13px; }
 
-        /* ══════════════════════════════════════════════
-           MOBILE  (≤ 500px) — card-style tables
-        ══════════════════════════════════════════════ */
-        @media (max-width: 500px) {
-            body { padding: 8px; }
-            .container { padding: 16px 12px; border-radius: 8px; }
+        /* ── Admin Gate Controls ── */
+        .admin-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .admin-controls button { flex: 1; min-width: 140px; margin-top: 0; }
 
-            /* Hide table wrapper border; each row becomes its own card */
-            .table-wrap { border: none; background: transparent; overflow-x: visible; }
-            table, thead, tbody, th, td, tr { display: block; }
-            thead { display: none; }   /* Hide column headers */
+        /* ══════════════════════════════════════════════════════
+           DESKTOP TABLE  (> 768px)
+        ══════════════════════════════════════════════════════ */
+        .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 15px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 520px; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eee; white-space: nowrap; }
+        th {
+            background-color: #f4f6f8;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+            color: #666;
+        }
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #fafafa; }
 
-            tr {
-                background: #fff;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                margin-bottom: 10px;
-                padding: 10px 12px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        /* ══════════════════════════════════════════════════════
+           TABLET + PHONE  (≤ 768px) — card layout
+        ══════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 20px 16px; border-radius: 10px; }
+            .time-row { flex-direction: column; gap: 0; }
+
+            /* ── Unwrap the table into stacked cards ── */
+            .table-wrap {
+                border: none;
+                background: transparent;
+                overflow-x: visible;
+                border-radius: 0;
+                margin-top: 12px;
+                margin-bottom: 24px;
             }
+            table, thead, tbody, th, td, tr { display: block; width: 100%; }
+            thead { display: none; } /* labels come from data-label */
 
+            /* Each row = a card */
+            tbody tr {
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                margin-bottom: 12px;
+                padding: 14px 16px 10px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+                position: relative;
+            }
+            tbody tr:hover { background: #fff; } /* override desktop hover */
+
+            /* Each cell = label + value row using CSS Grid */
             td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 6px 0;
-                border-bottom: 1px solid #f0f0f0;
+                display: grid;
+                grid-template-columns: 90px 1fr;
+                align-items: baseline;
+                padding: 5px 0;
+                border-bottom: 1px solid #f3f3f3;
                 font-size: 14px;
                 white-space: normal;
                 word-break: break-word;
-                gap: 8px;
+                gap: 10px;
             }
             td:last-child { border-bottom: none; padding-bottom: 0; }
 
-            /* Show column label before each cell value */
+            /* Label column */
             td::before {
                 content: attr(data-label);
+                font-size: 10.5px;
                 font-weight: 700;
-                color: #555;
-                font-size: 12px;
                 text-transform: uppercase;
-                letter-spacing: 0.04em;
-                flex-shrink: 0;
-                min-width: 60px;
+                letter-spacing: 0.07em;
+                color: #94a3b8;
+                padding-top: 2px;
             }
 
-            /* Action cell: put buttons on the right */
-            td[data-label="Action"],
-            td[data-label="Delete"] {
+            /* Status cell — badge-style */
+            td[data-label="Status"] span {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.05em;
+                background: #f0f0f0;
+            }
+
+            /* Action cell — buttons span full width at the bottom */
+            td[data-label="Action"] {
+                display: flex;
                 flex-wrap: wrap;
-                gap: 6px;
+                gap: 8px;
                 justify-content: flex-end;
+                grid-template-columns: unset;
+                padding-top: 10px;
+                margin-top: 4px;
             }
-            td[data-label="Action"]::before,
-            td[data-label="Delete"]::before { display: none; }
+            td[data-label="Action"]::before { display: none; }
 
-            /* Stat cards: full-width each */
+            /* Make action buttons bigger for touch */
+            td[data-label="Action"] button {
+                flex: 1;
+                min-width: 90px;
+                max-width: 160px;
+                min-height: 42px;
+                font-size: 14px;
+                padding: 10px 14px;
+                margin: 0;
+                border-radius: 8px;
+            }
+
+            /* Empty-state row spans cleanly */
+            tbody tr td[colspan] {
+                display: block;
+                grid-template-columns: unset;
+                text-align: center;
+                color: #999;
+                padding: 16px 0;
+                font-size: 14px;
+            }
+            tbody tr td[colspan]::before { display: none; }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           PHONE  (≤ 480px) — tighter tweaks
+        ══════════════════════════════════════════════════════ */
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .container { padding: 16px 12px; border-radius: 8px; }
+
+            tbody tr { padding: 12px 14px 10px; border-radius: 10px; }
+
+            td { grid-template-columns: 76px 1fr; font-size: 13.5px; }
+
+            /* Stat cards stack vertically */
             .stats-grid { flex-direction: column; }
-            .stat-card { min-width: unset; }
+            .stat-card  { min-width: unset; }
 
-            /* Admin gate buttons: full-width stacked */
+            /* Admin gate buttons stack */
             .admin-controls { flex-direction: column; }
             .admin-controls button { min-width: unset; }
 
@@ -643,18 +706,19 @@
                     const exitTime = exitTimeDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
                     let statusColor = '#3498db';
-                    if(b.status === 'valid') statusColor = '#2ecc71';
-                    if(b.status === 'checked-in') statusColor = '#9b59b6'; // Purple for checked-in
+                    let statusBg   = '#d6eaf8';
+                    if(b.status === 'valid')      { statusColor = '#1a9649'; statusBg = '#d5f5e3'; }
+                    if(b.status === 'checked-in') { statusColor = '#7d3c98'; statusBg = '#e8daef'; }
 
-                    const actionBtn = b.status === 'valid' ? `<button class="danger" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button>` : '-';
+                    const actionBtn = b.status === 'valid' ? `<button class="danger" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button>` : '';
 
                     tbody.innerHTML += `
                         <tr>
-                            <td data-label="Space">${b.slot.toUpperCase()}</td>
+                            <td data-label="Space">${b.slot}</td>
                             <td data-label="Date">${b.date}</td>
                             <td data-label="Entry">${entryTime}</td>
                             <td data-label="Exit">${exitTime}</td>
-                            <td data-label="Status"><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                            <td data-label="Status"><span style="color:${statusColor};background:${statusBg};font-weight:bold;">${b.status.toUpperCase()}</span></td>
                             <td data-label="Action">${actionBtn}</td>
                         </tr>
                     `;
@@ -717,26 +781,26 @@
                     const entryTime = new Date(b.entry_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     const exitTime = new Date(b.exit_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
-                    let statusColor = '#3498db'; 
-                    if (b.status === 'valid') statusColor = '#2ecc71'; // Green
-                    if (b.status === 'checked-in') statusColor = '#9b59b6'; // Purple - user has entered
-                    if (b.status === 'completed') statusColor = '#2c3e50'; // Dark Grey - user exited/finished
-                    if (b.status === 'cancelled') statusColor = '#e74c3c'; // Red
-                    if (b.status === 'expired') statusColor = '#95a5a6'; // Light Grey
+                    let statusColor = '#2471a3';  let statusBg = '#d6eaf8'; // default blue
+                    if (b.status === 'valid')      { statusColor = '#1a9649'; statusBg = '#d5f5e3'; }
+                    if (b.status === 'checked-in') { statusColor = '#7d3c98'; statusBg = '#e8daef'; }
+                    if (b.status === 'completed')  { statusColor = '#2c3e50'; statusBg = '#d5d8dc'; }
+                    if (b.status === 'cancelled')  { statusColor = '#c0392b'; statusBg = '#fadbd8'; }
+                    if (b.status === 'expired')    { statusColor = '#7f8c8d'; statusBg = '#eaecee'; }
 
-                    const actionBtn = b.status === 'valid' ? 
-                        `<button class="warning" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button> ` : '';
-                        
-                    const deleteBtn = `<button class="danger" style="margin-left: 5px;" onclick="deleteBooking('${id}')">Delete</button>`;
+                    const actionBtn = b.status === 'valid' ?
+                        `<button class="warning" onclick="updateBookingStatus('${id}', 'cancelled')">Cancel</button>` : '';
+
+                    const deleteBtn = `<button class="danger" onclick="deleteBooking('${id}')">Delete</button>`;
 
                     tbody.innerHTML += `
                         <tr>
                             <td data-label="User">${b.username}</td>
-                            <td data-label="Space">${b.slot.toUpperCase()}</td>
+                            <td data-label="Space">${b.slot}</td>
                             <td data-label="Date">${b.date}</td>
                             <td data-label="Entry">${entryTime}</td>
                             <td data-label="Exit">${exitTime}</td>
-                            <td data-label="Status"><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                            <td data-label="Status"><span style="color:${statusColor};background:${statusBg};font-weight:bold;">${b.status.toUpperCase()}</span></td>
                             <td data-label="Action">${actionBtn}${deleteBtn}</td>
                         </tr>
                     `;

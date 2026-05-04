@@ -161,10 +161,10 @@
         .table-wrap {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            margin-top: 15px;
-            margin-bottom: 30px;
+            margin: 14px 0 28px;
             border-radius: 10px;
             border: 1px solid #e0e0e0;
+            max-width: 100%;
         }
         table { width: 100%; border-collapse: collapse; min-width: 520px; }
         th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eee; white-space: nowrap; }
@@ -180,129 +180,162 @@
         tbody tr:hover { background: #fafafa; }
 
         /* ══════════════════════════════════════════════════════
-           TABLET + PHONE  (≤ 768px) — card layout
+           TABLET + PHONE CARD LAYOUT  (≤ 768px)
+           Each <tr> becomes a standalone card.
         ══════════════════════════════════════════════════════ */
         @media (max-width: 768px) {
+            /* Prevent ANY horizontal scroll on the page */
+            html, body { overflow-x: hidden; }
             body { padding: 10px; }
-            .container { padding: 20px 16px; border-radius: 10px; }
+            .container {
+                padding: 18px 14px;
+                border-radius: 10px;
+                max-width: 100%;
+                /* Keeps container within viewport even if children misbehave */
+                overflow: hidden;
+            }
+
             .time-row { flex-direction: column; gap: 0; }
 
-            /* ── Unwrap the table into stacked cards ── */
+            /* Strip table chrome; each row becomes its own block */
             .table-wrap {
                 border: none;
                 background: transparent;
-                overflow-x: visible;
+                overflow: visible;     /* no inner scroll — cards stack vertically */
                 border-radius: 0;
-                margin-top: 12px;
-                margin-bottom: 24px;
+                margin: 10px 0 20px;
+                max-width: 100%;
             }
-            table, thead, tbody, th, td, tr { display: block; width: 100%; }
-            thead { display: none; } /* labels come from data-label */
+
+            /* ── Critical: reset all table elements to block ── */
+            table {
+                display: block;
+                width: 100%;
+                min-width: 0;          /* ← removes the 520px min-width that caused overflow */
+                max-width: 100%;
+                border-collapse: unset;
+                border-spacing: 0;
+            }
+            thead  { display: none; }
+            tbody  { display: block; width: 100%; max-width: 100%; }
 
             /* Each row = a card */
             tbody tr {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
                 background: #fff;
-                border: 1px solid #e2e8f0;
+                border: 1px solid #dde3ec;
                 border-radius: 12px;
                 margin-bottom: 12px;
-                padding: 14px 16px 10px;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-                position: relative;
+                padding: 14px 14px 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.07);
             }
-            tbody tr:hover { background: #fff; } /* override desktop hover */
+            tbody tr:hover { background: #fff; }
 
-            /* Each cell = label + value row using CSS Grid */
+            /* Each cell = a label + value flex row */
             td {
-                display: grid;
-                grid-template-columns: 90px 1fr;
-                align-items: baseline;
-                padding: 5px 0;
-                border-bottom: 1px solid #f3f3f3;
+                display: flex;
+                align-items: flex-start;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                padding: 6px 0;
+                border-bottom: 1px solid #f2f2f2;
                 font-size: 14px;
                 white-space: normal;
                 word-break: break-word;
-                gap: 10px;
+                overflow-wrap: anywhere;
+                gap: 0;
             }
-            td:last-child { border-bottom: none; padding-bottom: 0; }
+            td:last-child { border-bottom: none; padding-bottom: 2px; }
 
-            /* Label column */
+            /* Fixed-width label column */
             td::before {
                 content: attr(data-label);
-                font-size: 10.5px;
+                display: block;
+                min-width: 70px;
+                max-width: 70px;
+                flex-shrink: 0;
+                font-size: 10px;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.07em;
-                color: #94a3b8;
-                padding-top: 2px;
+                color: #9dafc5;
+                padding-top: 3px;
+                line-height: 1.4;
             }
 
-            /* Status cell — badge-style */
+            /* Status badge */
             td[data-label="Status"] span {
                 display: inline-block;
                 padding: 3px 10px;
                 border-radius: 20px;
                 font-size: 11px;
                 font-weight: 700;
-                letter-spacing: 0.05em;
-                background: #f0f0f0;
+                letter-spacing: 0.04em;
             }
 
-            /* Action cell — buttons span full width at the bottom */
+            /* Action buttons — full-width row at bottom of card */
             td[data-label="Action"] {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 8px;
-                justify-content: flex-end;
-                grid-template-columns: unset;
-                padding-top: 10px;
+                padding-top: 12px;
+                border-top: 1px dashed #eee;
+                border-bottom: none;
                 margin-top: 4px;
             }
             td[data-label="Action"]::before { display: none; }
-
-            /* Make action buttons bigger for touch */
             td[data-label="Action"] button {
                 flex: 1;
-                min-width: 90px;
-                max-width: 160px;
-                min-height: 42px;
+                min-width: 80px;
+                min-height: 44px;
                 font-size: 14px;
-                padding: 10px 14px;
+                padding: 10px 12px;
                 margin: 0;
                 border-radius: 8px;
+                width: auto;
             }
 
-            /* Empty-state row spans cleanly */
-            tbody tr td[colspan] {
-                display: block;
-                grid-template-columns: unset;
+            /* Empty-state spans full card width */
+            td[colspan] {
+                display: block !important;
                 text-align: center;
-                color: #999;
-                padding: 16px 0;
+                color: #aaa;
+                padding: 18px 0 !important;
                 font-size: 14px;
+                border: none;
             }
-            tbody tr td[colspan]::before { display: none; }
+            td[colspan]::before { display: none !important; }
         }
 
         /* ══════════════════════════════════════════════════════
-           PHONE  (≤ 480px) — tighter tweaks
+           PORTRAIT PHONE  (≤ 430px) — tighten everything
         ══════════════════════════════════════════════════════ */
-        @media (max-width: 480px) {
-            body { padding: 8px; }
-            .container { padding: 16px 12px; border-radius: 8px; }
+        @media (max-width: 430px) {
+            body { padding: 6px; }
+            .container { padding: 14px 10px; border-radius: 8px; }
 
-            tbody tr { padding: 12px 14px 10px; border-radius: 10px; }
+            tbody tr { padding: 12px 12px 8px; border-radius: 10px; margin-bottom: 10px; }
+            td { font-size: 13px; padding: 5px 0; }
+            td::before { min-width: 62px; max-width: 62px; font-size: 9.5px; }
 
-            td { grid-template-columns: 76px 1fr; font-size: 13.5px; }
-
-            /* Stat cards stack vertically */
+            /* Stats stack full-width */
             .stats-grid { flex-direction: column; }
-            .stat-card  { min-width: unset; }
+            .stat-card  { min-width: unset; padding: 14px 12px; }
 
             /* Admin gate buttons stack */
             .admin-controls { flex-direction: column; }
             .admin-controls button { min-width: unset; }
 
-            .slot { min-width: 70px; padding: 14px 6px; }
+            /* Slot tiles smaller */
+            .slot { min-width: 60px; padding: 12px 6px; font-size: 12px; }
+
+            /* Header: stack name above logout on tiny screens */
+            .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .header button { width: 100%; }
         }
     </style>
 </head>

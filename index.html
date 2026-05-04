@@ -169,6 +169,7 @@
     let currentUserData = null;
     let userBookingsData = []; 
     let totalSystemSlots = 5; // Default capacity fallback
+    let userBookingsRef = null; // Track the active listener ref to avoid duplicates
 
     // Setup on page load 
     window.addEventListener('DOMContentLoaded', () => {
@@ -180,7 +181,13 @@
         if (savedSession) {
             currentUserData = JSON.parse(savedSession);
             document.getElementById('user-name-display').innerText = currentUserData.username;
-            showDashboard();
+            // Re-authenticate anonymously so Firebase auth state is valid after page reload
+            auth.signInAnonymously().then(() => {
+                showDashboard();
+            }).catch(() => {
+                // Even if anon auth fails, still attempt to show dashboard (DB rules may be open)
+                showDashboard();
+            });
         }
         
         setInterval(evaluateTimeBasedActions, 1000); 
@@ -270,12 +277,14 @@
             if (now > exitTime) {
                 if(b.status === 'valid') {
                     db.ref('bookings/' + b.id).update({ status: 'expired' });
-                    b.status = 'expired';
+                    b.status = 'expired'; // Update local copy to prevent re-writing every second
                 } else if (b.status === 'checked-in') {
                     db.ref('bookings/' + b.id).update({ status: 'completed' });
-                    b.status = 'completed';
+                    b.status = 'completed'; // Update local copy to prevent re-writing every second
                 }
-                if (currentUserData.role !== 'admin') loadUserBookings(); 
+                // REMOVED: loadUserBookings() call here — it was stacking a new .on() listener
+                // every time this ran (every second), causing a listener leak and infinite loop.
+                // The .on() listener in loadUserBookings() automatically re-renders when DB changes.
             }
         });
 
@@ -394,7 +403,12 @@
     }
 
     function loadUserBookings() {
-        db.ref('bookings').orderByChild('username').equalTo(currentUserData.username).on('value', (snap) => {
+        // Detach any previous listener before attaching a new one
+        if (userBookingsRef) {
+            userBookingsRef.off('value');
+        }
+        userBookingsRef = db.ref('bookings').orderByChild('username').equalTo(currentUserData.username);
+        userBookingsRef.on('value', (snap) => {
             const tbody = document.getElementById('user-table-body');
             tbody.innerHTML = '';
             userBookingsData = []; 
@@ -573,6 +587,7 @@
     }
 
     function logout() { 
+        if (userBookingsRef) userBookingsRef.off('value');
         localStorage.removeItem('sps_user_session'); 
         location.reload(); 
     }

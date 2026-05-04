@@ -5,41 +5,242 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Parking Booking System</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2, h3, h4 { color: #2c3e50; }
-        h2 { text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { background-color: #3498db; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; transition: background 0.3s; }
-        button:hover { background-color: #2980b9; }
+        /* ── Base ── */
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 16px;
+            /* Respect notch / home-bar safe areas on modern phones */
+            padding-left:  max(16px, env(safe-area-inset-left));
+            padding-right: max(16px, env(safe-area-inset-right));
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 28px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h2, h3, h4 { color: #2c3e50; margin-top: 0; }
+        h2 { text-align: center; font-size: clamp(1.3rem, 5vw, 1.8rem); }
+        h4 { font-size: clamp(0.95rem, 4vw, 1.1rem); }
+
+        hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+
+        /* ── Forms ── */
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+
+        input, select {
+            width: 100%;
+            padding: 12px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px; /* Prevents iOS auto-zoom on focus */
+        }
+
+        /* ── Buttons ── */
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 13px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            min-height: 48px; /* Accessible tap target */
+            transition: background 0.2s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button:hover  { background-color: #2980b9; }
+        button:active { transform: scale(0.98); }
+
         button.secondary { background-color: #95a5a6; }
+        button.secondary:hover { background-color: #7f8c8d; }
+
         button.success { background-color: #2ecc71; margin-top: 20px; font-weight: bold; }
-        button.danger { background-color: #e74c3c; width: auto; padding: 5px 10px; font-size: 14px; margin: 0; }
-        button.warning { background-color: #f39c12; width: auto; }
+        button.success:hover { background-color: #27ae60; }
+
+        button.danger {
+            background-color: #e74c3c;
+            width: auto;
+            padding: 8px 14px;
+            font-size: 13px;
+            margin: 0;
+            min-height: 36px;
+        }
+        button.danger:hover { background-color: #c0392b; }
+
+        button.warning {
+            background-color: #f39c12;
+            width: auto;
+            padding: 8px 14px;
+            font-size: 13px;
+            min-height: 36px;
+        }
+        button.warning:hover { background-color: #d68910; }
+
         .hidden { display: none !important; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
-        
-        /* Slot Grid Styling */
+
+        /* ── Header bar ── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .header h3 { margin: 0; font-size: clamp(1rem, 4.5vw, 1.2rem); }
+        .header button { width: auto; margin-top: 0; padding: 10px 16px; }
+
+        /* ── Slot Grid ── */
         .slot-grid { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .slot { flex: 1; min-width: 80px; padding: 20px; text-align: center; border-radius: 8px; font-weight: bold; color: white; }
+        .slot {
+            flex: 1;
+            min-width: 80px;
+            padding: 16px 10px;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+            font-size: clamp(0.75rem, 3vw, 0.9rem);
+        }
         .available { background-color: #2ecc71; }
-        .occupied { background-color: #e74c3c; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #f8f9fa; }
-        
-        /* Admin Dashboard Stats */
-        .stats-grid { display: flex; gap: 15px; margin-bottom: 20px; }
-        .stat-card { flex: 1; background: #ecf0f1; padding: 20px; border-radius: 8px; text-align: center; }
-        .stat-card h3 { margin: 0 0 10px 0; font-size: 24px; color: #2980b9; }
-        .stat-card p { margin: 0; font-weight: bold; color: #7f8c8d; }
-        
-        .admin-controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        
-        .info-box { background-color: #e8f4f8; padding: 15px; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 20px; font-size: 14px; }
+        .occupied  { background-color: #e74c3c; }
+
+        /* ── Tables (desktop) ── */
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 15px; margin-bottom: 30px; border-radius: 8px; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; min-width: 480px; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #ddd; white-space: nowrap; }
+        th { background-color: #f8f9fa; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+        tr:last-child td { border-bottom: none; }
+
+        /* ── Stats Grid ── */
+        .stats-grid { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat-card {
+            flex: 1;
+            min-width: 120px;
+            background: #ecf0f1;
+            padding: 18px 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card h3 { margin: 0 0 6px 0; font-size: clamp(1.4rem, 6vw, 1.8rem); color: #2980b9; }
+        .stat-card p  { margin: 0; font-weight: bold; color: #7f8c8d; font-size: 13px; }
+
+        /* ── Admin Gate Controls ── */
+        .admin-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .admin-controls button { flex: 1; min-width: 140px; margin-top: 0; }
+
+        /* ── Info box ── */
+        .info-box {
+            background-color: #e8f4f8;
+            padding: 13px 15px;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            margin-bottom: 18px;
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+
+        /* ── Gate message ── */
+        #gate-msg { font-size: 13px; color: #e74c3c; font-weight: bold; margin: 6px 0 0; line-height: 1.5; }
+
+        /* ── Booking form: entry/exit side by side on tablet+ ── */
+        .time-row { display: flex; gap: 12px; }
+        .time-row .form-group { flex: 1; }
+
+        /* ══════════════════════════════════════════════
+           TABLET  (≤ 700px)
+        ══════════════════════════════════════════════ */
+        @media (max-width: 700px) {
+            body { padding: 10px; }
+
+            .container { padding: 20px 16px; border-radius: 10px; }
+
+            /* Stack time inputs on narrow phones */
+            .time-row { flex-direction: column; gap: 0; }
+        }
+
+        /* ══════════════════════════════════════════════
+           MOBILE  (≤ 500px) — card-style tables
+        ══════════════════════════════════════════════ */
+        @media (max-width: 500px) {
+            body { padding: 8px; }
+            .container { padding: 16px 12px; border-radius: 8px; }
+
+            /* Hide table wrapper border; each row becomes its own card */
+            .table-wrap { border: none; background: transparent; overflow-x: visible; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }   /* Hide column headers */
+
+            tr {
+                background: #fff;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin-bottom: 10px;
+                padding: 10px 12px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 6px 0;
+                border-bottom: 1px solid #f0f0f0;
+                font-size: 14px;
+                white-space: normal;
+                word-break: break-word;
+                gap: 8px;
+            }
+            td:last-child { border-bottom: none; padding-bottom: 0; }
+
+            /* Show column label before each cell value */
+            td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #555;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                flex-shrink: 0;
+                min-width: 60px;
+            }
+
+            /* Action cell: put buttons on the right */
+            td[data-label="Action"],
+            td[data-label="Delete"] {
+                flex-wrap: wrap;
+                gap: 6px;
+                justify-content: flex-end;
+            }
+            td[data-label="Action"]::before,
+            td[data-label="Delete"]::before { display: none; }
+
+            /* Stat cards: full-width each */
+            .stats-grid { flex-direction: column; }
+            .stat-card { min-width: unset; }
+
+            /* Admin gate buttons: full-width stacked */
+            .admin-controls { flex-direction: column; }
+            .admin-controls button { min-width: unset; }
+
+            .slot { min-width: 70px; padding: 14px 6px; }
+        }
     </style>
 </head>
 <body>
@@ -81,8 +282,10 @@
         </div>
         
         <div class="form-group"><label>Date</label><input type="date" id="book-date"></div>
-        <div class="form-group"><label>Entry Time</label><input type="time" id="book-entry"></div>
-        <div class="form-group"><label>Exit Time</label><input type="time" id="book-exit"></div>
+        <div class="time-row">
+            <div class="form-group"><label>Entry Time</label><input type="time" id="book-entry"></div>
+            <div class="form-group"><label>Exit Time</label><input type="time" id="book-exit"></div>
+        </div>
         <button onclick="createBooking()">Confirm Booking</button>
 
         <hr>
@@ -93,10 +296,12 @@
         <hr>
 
         <h4>My Upcoming & Active Bookings</h4>
+        <div class="table-wrap">
         <table>
             <thead><tr><th>Space</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="user-table-body"></tbody>
         </table>
+        </div>
     </div>
 
     <!-- ADMIN DASHBOARD -->
@@ -131,18 +336,22 @@
         <hr>
 
         <h4>All System Bookings</h4>
+        <div class="table-wrap">
         <table>
             <thead><tr><th>User</th><th>Space</th><th>Date</th><th>Entry</th><th>Exit</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="admin-table-body"></tbody>
         </table>
+        </div>
 
         <hr>
 
         <h4>Registered Users</h4>
+        <div class="table-wrap">
         <table>
             <thead><tr><th>Username</th><th>Role</th></tr></thead>
             <tbody id="admin-users-table-body"></tbody>
         </table>
+        </div>
     </div>
 </div>
 
@@ -441,12 +650,12 @@
 
                     tbody.innerHTML += `
                         <tr>
-                            <td>${b.slot.toUpperCase()}</td>
-                            <td>${b.date}</td>
-                            <td>${entryTime}</td>
-                            <td>${exitTime}</td>
-                            <td><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
-                            <td>${actionBtn}</td>
+                            <td data-label="Space">${b.slot.toUpperCase()}</td>
+                            <td data-label="Date">${b.date}</td>
+                            <td data-label="Entry">${entryTime}</td>
+                            <td data-label="Exit">${exitTime}</td>
+                            <td data-label="Status"><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                            <td data-label="Action">${actionBtn}</td>
                         </tr>
                     `;
                 });
@@ -522,13 +731,13 @@
 
                     tbody.innerHTML += `
                         <tr>
-                            <td>${b.username}</td>
-                            <td>${b.slot.toUpperCase()}</td>
-                            <td>${b.date}</td>
-                            <td>${entryTime}</td>
-                            <td>${exitTime}</td>
-                            <td><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
-                            <td>${actionBtn}${deleteBtn}</td>
+                            <td data-label="User">${b.username}</td>
+                            <td data-label="Space">${b.slot.toUpperCase()}</td>
+                            <td data-label="Date">${b.date}</td>
+                            <td data-label="Entry">${entryTime}</td>
+                            <td data-label="Exit">${exitTime}</td>
+                            <td data-label="Status"><span style="color: ${statusColor}; font-weight: bold;">${b.status.toUpperCase()}</span></td>
+                            <td data-label="Action">${actionBtn}${deleteBtn}</td>
                         </tr>
                     `;
                 });
@@ -554,8 +763,8 @@
                     const role = child.val().role;
                     tbody.innerHTML += `
                         <tr>
-                            <td><strong>${username}</strong></td>
-                            <td>${role.toUpperCase()}</td>
+                            <td data-label="Username"><strong>${username}</strong></td>
+                            <td data-label="Role">${role.toUpperCase()}</td>
                         </tr>
                     `;
                 });
